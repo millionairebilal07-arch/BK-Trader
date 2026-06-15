@@ -1,0 +1,1519 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>BK Trader Pro</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=Space+Grotesk:wght@500;700&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box;}
+body{background:#0A0E16;font-family:'Inter',system-ui,sans-serif;}
+::-webkit-scrollbar{width:3px;}
+::-webkit-scrollbar-track{background:transparent;}
+::-webkit-scrollbar-thumb{background:rgba(20,184,166,0.3);border-radius:3px;}
+input::placeholder{color:rgba(148,163,184,0.4);letter-spacing:0.5px;}
+</style>
+</head>
+<body>
+<div id="root"></div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.23.5/babel.min.js"></script>
+<script type="text/babel">
+const { useState, useEffect, useRef, useCallback } = React;
+
+const LICENSE_PASSWORD = "2008";
+
+const FLAG = {
+  USD:"🇺🇸",EUR:"🇪🇺",GBP:"🇬🇧",JPY:"🇯🇵",AUD:"🇦🇺",
+  CAD:"🇨🇦",CHF:"🇨🇭",NZD:"🇳🇿",BRL:"🇧🇷",PKR:"🇵🇰",
+  INR:"🇮🇳",TRY:"🇹🇷",MXN:"🇲🇽",ZAR:"🇿🇦",SGD:"🇸🇬",
+  HKD:"🇭🇰",NOK:"🇳🇴",SEK:"🇸🇪",DKK:"🇩🇰",PLN:"🇵🇱",
+  CZK:"🇨🇿",HUF:"🇭🇺",RON:"🇷🇴",IDR:"🇮🇩",THB:"🇹🇭",
+  MYR:"🇲🇾",PHP:"🇵🇭",KRW:"🇰🇷",CNY:"🇨🇳",SAR:"🇸🇦",
+  AED:"🇦🇪",EGP:"🇪🇬",NGN:"🇳🇬",KES:"🇰🇪",
+};
+
+const QUOTEX_PAIRS = {
+  "OTC": [
+    "AUD/CAD (OTC)","AUD/CHF (OTC)","AUD/JPY (OTC)","AUD/NZD (OTC)",
+    "AUD/USD (OTC)","CAD/CHF (OTC)","CAD/JPY (OTC)","CHF/JPY (OTC)",
+    "EUR/AUD (OTC)","EUR/CAD (OTC)","EUR/CHF (OTC)","EUR/GBP (OTC)",
+    "EUR/JPY (OTC)","EUR/NZD (OTC)","EUR/USD (OTC)",
+    "GBP/AUD (OTC)","GBP/CAD (OTC)","GBP/CHF (OTC)","GBP/JPY (OTC)",
+    "GBP/NZD (OTC)","GBP/USD (OTC)",
+    "NZD/CAD (OTC)","NZD/CHF (OTC)","NZD/JPY (OTC)","NZD/USD (OTC)",
+    "USD/CAD (OTC)","USD/CHF (OTC)","USD/JPY (OTC)",
+    "USD/BRL (OTC)","USD/PKR (OTC)","USD/INR (OTC)","USD/TRY (OTC)",
+    "USD/MXN (OTC)","USD/ZAR (OTC)","USD/SGD (OTC)","USD/HKD (OTC)",
+    "USD/NOK (OTC)","USD/SEK (OTC)","USD/DKK (OTC)","USD/PLN (OTC)",
+    "USD/IDR (OTC)","USD/THB (OTC)","USD/MYR (OTC)","USD/PHP (OTC)",
+    "USD/KRW (OTC)","USD/CNY (OTC)","USD/SAR (OTC)","USD/AED (OTC)",
+    "USD/EGP (OTC)","USD/NGN (OTC)","USD/KES (OTC)",
+    "EUR/TRY (OTC)","EUR/PLN (OTC)","EUR/NOK (OTC)","EUR/SEK (OTC)",
+    "GBP/PLN (OTC)","GBP/NOK (OTC)","GBP/SEK (OTC)",
+    "Bitcoin (OTC)","Ethereum (OTC)","Litecoin (OTC)","Ripple (OTC)",
+    "Bitcoin Cash (OTC)","Binance Coin (OTC)","Dash (OTC)","Ethereum Classic (OTC)",
+    "Solana (OTC)","Toncoin (OTC)","Chainlink (OTC)","Polkadot (OTC)",
+    "Gold (OTC)","Silver (OTC)","UKBrent (OTC)","USCrude (OTC)",
+  ],
+  "LIVE": [
+    "AUD/CAD","AUD/CHF","AUD/JPY","AUD/NZD","AUD/USD",
+    "CAD/CHF","CAD/JPY","CHF/JPY",
+    "EUR/AUD","EUR/CAD","EUR/CHF","EUR/GBP","EUR/JPY","EUR/NZD","EUR/USD",
+    "GBP/AUD","GBP/CAD","GBP/CHF","GBP/JPY","GBP/NZD","GBP/USD",
+    "NZD/CAD","NZD/CHF","NZD/JPY","NZD/USD",
+    "USD/BRL","USD/CAD","USD/CHF","USD/CNY","USD/HKD","USD/IDR",
+    "USD/INR","USD/JPY","USD/KES","USD/KRW","USD/MXN","USD/MYR",
+    "USD/NGN","USD/NOK","USD/PKR","USD/PHP","USD/PLN","USD/SAR",
+    "USD/SEK","USD/SGD","USD/THB","USD/TRY","USD/ZAR",
+    "Bitcoin/USD","Ethereum/USD","Litecoin/USD","Ripple/USD",
+    "Solana/USD","BNB/USD",
+    "Gold/USD","Silver/USD","UKBrent/USD","USCrude/USD",
+  ],
+};
+
+const TIMEFRAMES = [
+  {label:"S5",  mode:"SCALP",secs:5},
+  {label:"S10", mode:"SCALP",secs:10},
+  {label:"S15", mode:"SCALP",secs:15},
+  {label:"S30", mode:"SCALP",secs:30},
+  {label:"M1",  mode:"SWING",secs:60},
+  {label:"M5",  mode:"SWING",secs:300},
+  {label:"M15", mode:"SWING",secs:900},
+  {label:"M30", mode:"SWING",secs:1800},
+];
+
+// ── DESIGN TOKENS — Professional Trading Terminal Palette ──────────────────────
+const D = {
+  // Base backgrounds — deep graphite, slightly cooler
+  bg:        "#0A0E16",
+  bg2:       "#0F1521",
+  bg3:       "#141B2C",
+  // Cards
+  card:      "rgba(255,255,255,0.032)",
+  cardBrd:   "rgba(255,255,255,0.06)",
+  // Teal accent (signature — replaces violet)
+  violet:    "#14B8A6",
+  violetBrt: "#5EEAD4",
+  violetDim: "#0F4C42",
+  violetFnt: "rgba(20,184,166,0.12)",
+  violetGlw: "rgba(20,184,166,0.25)",
+  // Emerald (BUY)
+  emerald:   "#22C55E",
+  emeraldBrt:"#4ADE80",
+  emeraldDim:"#14532D",
+  emeraldFnt:"rgba(34,197,94,0.12)",
+  // Rose (SELL)
+  rose:      "#F43F5E",
+  roseBrt:   "#FB7185",
+  roseDim:   "#881337",
+  roseFnt:   "rgba(244,63,94,0.12)",
+  // Gold (WAIT / SCALP)
+  amber:     "#EAB308",
+  amberBrt:  "#FDE047",
+  amberFnt:  "rgba(234,179,8,0.12)",
+  // Steel Blue (SWING)
+  sky:       "#3B82F6",
+  skyBrt:    "#60A5FA",
+  skyFnt:    "rgba(59,130,246,0.12)",
+  // Text
+  text:      "#F1F5F9",
+  textSub:   "#52647A",
+  textMid:   "#94A3B8",
+  textDim:   "#647187",
+};
+
+// ── INDICATOR ENGINE (unchanged logic) ───────────────────────────────────────
+function calcEMA(prices,period){
+  if(prices.length<period)return prices[prices.length-1]||0;
+  const k=2/(period+1);
+  let ema=prices.slice(0,period).reduce((a,b)=>a+b,0)/period;
+  for(let i=period;i<prices.length;i++)ema=prices[i]*k+ema*(1-k);
+  return ema;
+}
+function calcSMA(prices,period){return prices.slice(-period).reduce((a,b)=>a+b,0)/prices.slice(-period).length;}
+function calcRSI(prices,period){
+  if(prices.length<period+2)return 50;
+  let gains=0,losses=0;
+  for(let i=prices.length-period;i<prices.length;i++){
+    const d=prices[i]-prices[i-1];
+    if(d>0)gains+=d;else losses+=Math.abs(d);
+  }
+  return 100-100/(1+gains/(losses||0.0001));
+}
+function calcStoch(candles,period){
+  const sl=candles.slice(-period);
+  const hi=Math.max(...sl.map(c=>c.high)),lo=Math.min(...sl.map(c=>c.low));
+  return((candles[candles.length-1].close-lo)/(hi-lo||0.0001))*100;
+}
+function calcBollinger(prices,period,mult=2){
+  const sl=prices.slice(-period);
+  const mean=sl.reduce((a,b)=>a+b,0)/period;
+  const std=Math.sqrt(sl.reduce((s,v)=>s+Math.pow(v-mean,2),0)/period);
+  return{upper:mean+mult*std,middle:mean,lower:mean-mult*std,std,squeeze:std<mean*0.0007};
+}
+function calcMACD(prices,fast,slow,signal){
+  // Build a proper MACD line series, then EMA that series for the signal line
+  if(prices.length<slow+signal){
+    const fastEMA=calcEMA(prices,fast),slowEMA=calcEMA(prices,slow);
+    const macdLine=fastEMA-slowEMA;
+    return{macd:macdLine,signal:macdLine,hist:0};
+  }
+  const macdSeries=[];
+  for(let i=slow-1;i<prices.length;i++){
+    const slice=prices.slice(0,i+1);
+    macdSeries.push(calcEMA(slice,fast)-calcEMA(slice,slow));
+  }
+  const macdLine=macdSeries[macdSeries.length-1];
+  const signalLine=calcEMA(macdSeries,signal);
+  return{macd:macdLine,signal:signalLine,hist:macdLine-signalLine};
+}
+function calcATR(candles,period){
+  const sl=candles.slice(-period);
+  const trs=sl.map((c,i)=>{
+    if(i===0)return c.high-c.low;
+    const prev=sl[i-1];
+    return Math.max(c.high-c.low,Math.abs(c.high-prev.close),Math.abs(c.low-prev.close));
+  });
+  return trs.reduce((a,b)=>a+b,0)/period;
+}
+function calcCCI(candles,period){
+  const sl=candles.slice(-period);
+  const tp=sl.map(c=>(c.high+c.low+c.close)/3);
+  const mean=tp.reduce((a,b)=>a+b,0)/period;
+  const md=tp.reduce((s,v)=>s+Math.abs(v-mean),0)/period;
+  return(tp[tp.length-1]-mean)/(0.015*(md||0.0001));
+}
+function calcWilliamsR(candles,period){
+  const sl=candles.slice(-period);
+  const hi=Math.max(...sl.map(c=>c.high)),lo=Math.min(...sl.map(c=>c.low));
+  return((hi-candles[candles.length-1].close)/(hi-lo||0.0001))*-100;
+}
+function calcVWAP(candles){
+  const sl=candles.slice(-20);let pv=0,vol=0;
+  sl.forEach(c=>{const tp=(c.high+c.low+c.close)/3,v=Math.abs(c.close-c.open)*10000+1;pv+=tp*v;vol+=v;});
+  return pv/vol;
+}
+function calcMFI(candles,period){
+  const sl=candles.slice(-period-1);let posFlow=0,negFlow=0;
+  for(let i=1;i<sl.length;i++){
+    const tp=(sl[i].high+sl[i].low+sl[i].close)/3,prevTp=(sl[i-1].high+sl[i-1].low+sl[i-1].close)/3;
+    const vol=Math.abs(sl[i].close-sl[i].open)*10000+1;
+    if(tp>prevTp)posFlow+=tp*vol;else negFlow+=tp*vol;
+  }
+  return 100-100/(1+posFlow/(negFlow||0.0001));
+}
+function calcSupportResistance(candles){
+  const highs=candles.map(c=>c.high).sort((a,b)=>b-a),lows=candles.map(c=>c.low).sort((a,b)=>a-b);
+  return{resistance:highs.slice(0,5).reduce((a,b)=>a+b,0)/5,support:lows.slice(0,5).reduce((a,b)=>a+b,0)/5};
+}
+function detectCandlePattern(candles){
+  const c=candles[candles.length-1],p1=candles[candles.length-2],p2=candles[candles.length-3];
+  const body=Math.abs(c.close-c.open),range=c.high-c.low;
+  const upWick=c.high-Math.max(c.open,c.close),downWick=Math.min(c.open,c.close)-c.low;
+  const isBull=c.close>c.open;
+  const doji=body<range*0.1,hammer=isBull&&downWick>body*2&&upWick<body*0.3;
+  const shootingStar=!isBull&&upWick>body*2&&downWick<body*0.3;
+  const bullEngulf=c.close>c.open&&p1.close<p1.open&&c.open<p1.close&&c.close>p1.open;
+  const bearEngulf=c.close<c.open&&p1.close>p1.open&&c.open>p1.close&&c.close<p1.open;
+  const mornStar=p2.close<p2.open&&doji&&c.close>c.open&&c.close>(p2.open+p2.close)/2;
+  const eveStar=p2.close>p2.open&&doji&&c.close<c.open&&c.close<(p2.open+p2.close)/2;
+  const threeWhite=c.close>c.open&&p1.close>p1.open&&p2.close>p2.open&&c.close>p1.close&&p1.close>p2.close;
+  const threeBlack=c.close<c.open&&p1.close<p1.open&&p2.close<p2.open&&c.close<p1.close&&p1.close<p2.close;
+  const pinBull=isBull&&downWick>body*1.8,pinBear=!isBull&&upWick>body*1.8;
+  const hhhl=c.high>p1.high&&p1.high>p2.high&&c.low>p1.low,llhl=c.low<p1.low&&p1.low<p2.low&&c.high<p1.high;
+  if(threeWhite)return{sig:"BUY",pat:"Three White Soldiers",str:4};
+  if(threeBlack)return{sig:"SELL",pat:"Three Black Crows",str:4};
+  if(mornStar)return{sig:"BUY",pat:"Morning Star ★",str:3};
+  if(eveStar)return{sig:"SELL",pat:"Evening Star ★",str:3};
+  if(bullEngulf)return{sig:"BUY",pat:"Bullish Engulfing ↑",str:3};
+  if(bearEngulf)return{sig:"SELL",pat:"Bearish Engulfing ↓",str:3};
+  if(hammer)return{sig:"BUY",pat:"Hammer Reversal ↑",str:2};
+  if(shootingStar)return{sig:"SELL",pat:"Shooting Star ↓",str:2};
+  if(pinBull)return{sig:"BUY",pat:"Bullish Pin Bar",str:2};
+  if(pinBear)return{sig:"SELL",pat:"Bearish Pin Bar",str:2};
+  if(hhhl)return{sig:"BUY",pat:"HH-HL Uptrend ↑",str:2};
+  if(llhl)return{sig:"SELL",pat:"LL-LH Downtrend ↓",str:2};
+  if(doji)return{sig:"WAIT",pat:"Doji — Indecision",str:0};
+  return{sig:"NEUTRAL",pat:"No Clear Pattern",str:0};
+}
+function calcTrendStrength(candles,period=14){
+  const sl=candles.slice(-period);let upMoves=0,downMoves=0;
+  for(let i=1;i<sl.length;i++){
+    const upMove=sl[i].high-sl[i-1].high,downMove=sl[i-1].low-sl[i].low;
+    if(upMove>downMove&&upMove>0)upMoves+=upMove;
+    if(downMove>upMove&&downMove>0)downMoves+=downMove;
+  }
+  const total=upMoves+downMoves||1;
+  return{strength:Math.abs(upMoves-downMoves)/total*100,dir:upMoves>downMoves?"UP":"DOWN"};
+}
+function calcMTFBias(candles){
+  const prices=candles.map(c=>c.close);
+  const ema8=calcEMA(prices,8),ema21=calcEMA(prices,21),ema55=calcEMA(prices,55),current=prices[prices.length-1];
+  let bull=0,bear=0;
+  if(ema8>ema21)bull++;else bear++;
+  if(ema21>ema55)bull++;else bear++;
+  if(current>ema8)bull++;else bear++;
+  if(current>ema21)bull++;else bear++;
+  return{bias:bull>bear?"BULL":"BEAR",strength:Math.abs(bull-bear),ema8,ema21,ema55};
+}
+function calcDivergence(candles){
+  const recent=candles.slice(-8),prices=recent.map(c=>c.close);
+  const momentum=recent.map((c,i)=>i===0?0:c.close-recent[i-1].close);
+  const lastPrice=prices[prices.length-1],prevPrice=prices[prices.length-4];
+  const lastMom=momentum.slice(-3).reduce((a,b)=>a+b,0),prevMom=momentum.slice(-7,-4).reduce((a,b)=>a+b,0);
+  if(lastPrice<prevPrice&&lastMom>prevMom)return{type:"BULL",label:"Bullish Divergence Detected"};
+  if(lastPrice>prevPrice&&lastMom<prevMom)return{type:"BEAR",label:"Bearish Divergence Detected"};
+  return{type:"NONE",label:"No Divergence"};
+}
+
+function generateScalpSignal(candles){
+  const prices=candles.map(c=>c.close);
+  const rsi=calcRSI(prices,7),rsi14=calcRSI(prices,14);
+  const stoch=calcStoch(candles,7),cci=calcCCI(candles,10),wr=calcWilliamsR(candles,7);
+  const macd=calcMACD(prices,5,13,4),bb=calcBollinger(prices,10),atr=calcATR(candles,7);
+  const mfi=calcMFI(candles,10),mtf=calcMTFBias(candles),pattern=detectCandlePattern(candles);
+  const diverg=calcDivergence(candles),tStr=calcTrendStrength(candles,10);
+  const{support,resistance}=calcSupportResistance(candles);
+  const price=prices[prices.length-1],vwap=calcVWAP(candles);
+  let buy=0,sell=0,reasons=[];
+  if(rsi<12){buy+=30;reasons.push({txt:`RSI(7) Extreme Oversold ${rsi.toFixed(1)} — Snap Reversal`,t:"buy",w:4});}
+  else if(rsi<25){buy+=22;reasons.push({txt:`RSI(7) Oversold ${rsi.toFixed(1)} — Buy Zone`,t:"buy",w:3});}
+  else if(rsi>88){sell+=30;reasons.push({txt:`RSI(7) Extreme Overbought ${rsi.toFixed(1)} — Drop Signal`,t:"sell",w:4});}
+  else if(rsi>75){sell+=22;reasons.push({txt:`RSI(7) Overbought ${rsi.toFixed(1)} — Sell Zone`,t:"sell",w:3});}
+  else reasons.push({txt:`RSI(7) Neutral ${rsi.toFixed(1)}`,t:"neutral",w:0});
+  if(rsi14<35&&rsi<30){buy+=10;reasons.push({txt:`RSI(14) Confirms Oversold ${rsi14.toFixed(1)}`,t:"buy",w:2});}
+  if(rsi14>65&&rsi>70){sell+=10;reasons.push({txt:`RSI(14) Confirms Overbought ${rsi14.toFixed(1)}`,t:"sell",w:2});}
+  if(stoch<6){buy+=25;reasons.push({txt:`Stoch(7) Extreme Oversold ${stoch.toFixed(0)} — Bounce!`,t:"buy",w:4});}
+  else if(stoch<20){buy+=16;reasons.push({txt:`Stoch(7) Oversold ${stoch.toFixed(0)}`,t:"buy",w:2});}
+  else if(stoch>94){sell+=25;reasons.push({txt:`Stoch(7) Extreme Overbought ${stoch.toFixed(0)} — Drop!`,t:"sell",w:4});}
+  else if(stoch>80){sell+=16;reasons.push({txt:`Stoch(7) Overbought ${stoch.toFixed(0)}`,t:"sell",w:2});}
+  else reasons.push({txt:`Stoch(7) Neutral ${stoch.toFixed(0)}`,t:"neutral",w:0});
+  if(macd.macd>0&&macd.hist>0){buy+=18;reasons.push({txt:`Fast MACD(5/13) Bullish + Histogram ↑`,t:"buy",w:3});}
+  else if(macd.macd<0&&macd.hist<0){sell+=18;reasons.push({txt:`Fast MACD(5/13) Bearish + Histogram ↓`,t:"sell",w:3});}
+  else if(macd.macd>0){buy+=8;reasons.push({txt:`Fast MACD Bullish Cross`,t:"buy",w:1});}
+  else{sell+=8;reasons.push({txt:`Fast MACD Bearish Cross`,t:"sell",w:1});}
+  if(price<=bb.lower*1.0005){buy+=22;reasons.push({txt:`Price at BB Lower — Reversal Expected`,t:"buy",w:3});}
+  else if(price>=bb.upper*0.9995){sell+=22;reasons.push({txt:`Price at BB Upper — Rejection Expected`,t:"sell",w:3});}
+  else if(bb.squeeze)reasons.push({txt:`BB Squeeze — Fast Breakout Imminent`,t:"neutral",w:0});
+  else reasons.push({txt:`Price Inside Bollinger Bands`,t:"neutral",w:0});
+  if(wr<-88){buy+=16;reasons.push({txt:`Williams %R Oversold (${wr.toFixed(0)})`,t:"buy",w:2});}
+  else if(wr>-12){sell+=16;reasons.push({txt:`Williams %R Overbought (${wr.toFixed(0)})`,t:"sell",w:2});}
+  else reasons.push({txt:`Williams %R Neutral (${wr.toFixed(0)})`,t:"neutral",w:0});
+  if(cci<-140){buy+=14;reasons.push({txt:`CCI(10) Oversold (${cci.toFixed(0)})`,t:"buy",w:2});}
+  else if(cci>140){sell+=14;reasons.push({txt:`CCI(10) Overbought (${cci.toFixed(0)})`,t:"sell",w:2});}
+  else reasons.push({txt:`CCI(10) Neutral (${cci.toFixed(0)})`,t:"neutral",w:0});
+  if(mfi<25){buy+=14;reasons.push({txt:`MFI Oversold (${mfi.toFixed(0)}) — Buy Pressure`,t:"buy",w:2});}
+  else if(mfi>75){sell+=14;reasons.push({txt:`MFI Overbought (${mfi.toFixed(0)}) — Sell Pressure`,t:"sell",w:2});}
+  else reasons.push({txt:`MFI Neutral (${mfi.toFixed(0)})`,t:"neutral",w:0});
+  if(mtf.bias==="BULL"){buy+=10*mtf.strength;reasons.push({txt:`EMA Stack Bullish (${mtf.strength}/4 aligned)`,t:"buy",w:mtf.strength});}
+  else{sell+=10*mtf.strength;reasons.push({txt:`EMA Stack Bearish (${mtf.strength}/4 aligned)`,t:"sell",w:mtf.strength});}
+  if(price<vwap*0.9998){buy+=8;reasons.push({txt:`Price Below VWAP — Buy Bias`,t:"buy",w:1});}
+  else if(price>vwap*1.0002){sell+=8;reasons.push({txt:`Price Above VWAP — Sell Bias`,t:"sell",w:1});}
+  const dSup=Math.abs(price-support),dRes=Math.abs(price-resistance);
+  if(dSup<dRes){buy+=10;reasons.push({txt:`Price Near Support Zone (${support.toFixed(5)})`,t:"buy",w:2});}
+  else{sell+=10;reasons.push({txt:`Price Near Resistance Zone (${resistance.toFixed(5)})`,t:"sell",w:2});}
+  if(pattern.sig==="BUY"){buy+=14*pattern.str;reasons.push({txt:`${pattern.pat} — Scalp Buy`,t:"buy",w:pattern.str});}
+  else if(pattern.sig==="SELL"){sell+=14*pattern.str;reasons.push({txt:`${pattern.pat} — Scalp Sell`,t:"sell",w:pattern.str});}
+  if(diverg.type==="BULL"){buy+=16;reasons.push({txt:`${diverg.label}`,t:"buy",w:3});}
+  if(diverg.type==="BEAR"){sell+=16;reasons.push({txt:`${diverg.label}`,t:"sell",w:3});}
+  if(tStr.strength>40){
+    if(tStr.dir==="UP"){buy+=12;reasons.push({txt:`Strong Uptrend (ADX ${tStr.strength.toFixed(0)})`,t:"buy",w:2});}
+    else{sell+=12;reasons.push({txt:`Strong Downtrend (ADX ${tStr.strength.toFixed(0)})`,t:"sell",w:2});}
+  }
+  return _decideSignal(buy,sell,reasons,{price,rsi,stoch,cci,wr,macd,bb,atr,mfi,mtf,pattern,diverg,tStr,vwap,support,resistance,trend:mtf.bias==="BULL"?"UP":"DOWN"});
+}
+
+function generateSwingSignal(candles){
+  const prices=candles.map(c=>c.close);
+  const rsi=calcRSI(prices,14),stoch=calcStoch(candles,14),cci=calcCCI(candles,20);
+  const wr=calcWilliamsR(candles,14),macd=calcMACD(prices,12,26,9),bb=calcBollinger(prices,20);
+  const atr=calcATR(candles,14),mfi=calcMFI(candles,14),mtf=calcMTFBias(candles);
+  const pattern=detectCandlePattern(candles),diverg=calcDivergence(candles),tStr=calcTrendStrength(candles,14);
+  const{support,resistance}=calcSupportResistance(candles);
+  const price=prices[prices.length-1],vwap=calcVWAP(candles);
+  const ema9=calcEMA(prices,9),ema21=calcEMA(prices,21),ema50=calcEMA(prices,50);
+  let buy=0,sell=0,reasons=[];
+  if(rsi<18){buy+=28;reasons.push({txt:`RSI(14) Extreme Oversold ${rsi.toFixed(1)} — Strong Reversal`,t:"buy",w:4});}
+  else if(rsi<30){buy+=22;reasons.push({txt:`RSI(14) Oversold ${rsi.toFixed(1)} — Buy Zone`,t:"buy",w:3});}
+  else if(rsi>82){sell+=28;reasons.push({txt:`RSI(14) Extreme Overbought ${rsi.toFixed(1)} — Reversal`,t:"sell",w:4});}
+  else if(rsi>70){sell+=22;reasons.push({txt:`RSI(14) Overbought ${rsi.toFixed(1)} — Sell Zone`,t:"sell",w:3});}
+  else reasons.push({txt:`RSI(14) Neutral ${rsi.toFixed(1)}`,t:"neutral",w:0});
+  if(stoch<10){buy+=20;reasons.push({txt:`Stoch(14) Extreme Oversold ${stoch.toFixed(0)} — Bounce`,t:"buy",w:3});}
+  else if(stoch<25){buy+=14;reasons.push({txt:`Stoch(14) Oversold ${stoch.toFixed(0)}`,t:"buy",w:2});}
+  else if(stoch>90){sell+=20;reasons.push({txt:`Stoch(14) Extreme Overbought ${stoch.toFixed(0)}`,t:"sell",w:3});}
+  else if(stoch>75){sell+=14;reasons.push({txt:`Stoch(14) Overbought ${stoch.toFixed(0)}`,t:"sell",w:2});}
+  else reasons.push({txt:`Stoch(14) Neutral ${stoch.toFixed(0)}`,t:"neutral",w:0});
+  if(macd.macd>0&&macd.hist>0){buy+=20;reasons.push({txt:`MACD(12/26/9) Bullish + Histogram Rising`,t:"buy",w:3});}
+  else if(macd.macd<0&&macd.hist<0){sell+=20;reasons.push({txt:`MACD(12/26/9) Bearish + Histogram Falling`,t:"sell",w:3});}
+  else if(macd.macd>0){buy+=10;reasons.push({txt:`MACD Bullish Cross`,t:"buy",w:1});}
+  else{sell+=10;reasons.push({txt:`MACD Bearish Cross`,t:"sell",w:1});}
+  if(price<=bb.lower){buy+=22;reasons.push({txt:`Price Below BB Lower — Reversal Up`,t:"buy",w:3});}
+  else if(price>=bb.upper){sell+=22;reasons.push({txt:`Price Above BB Upper — Reversal Down`,t:"sell",w:3});}
+  else if(bb.squeeze)reasons.push({txt:`BB Squeeze — Breakout Imminent`,t:"neutral",w:0});
+  const bullStack=ema9>ema21&&ema21>ema50,bearStack=ema9<ema21&&ema21<ema50;
+  if(bullStack){buy+=18;reasons.push({txt:`EMA 9>21>50 — Strong Uptrend`,t:"buy",w:3});}
+  else if(bearStack){sell+=18;reasons.push({txt:`EMA 9<21<50 — Strong Downtrend`,t:"sell",w:3});}
+  else if(ema9>ema21){buy+=9;reasons.push({txt:`EMA9 > EMA21 — Uptrend`,t:"buy",w:1});}
+  else{sell+=9;reasons.push({txt:`EMA9 < EMA21 — Downtrend`,t:"sell",w:1});}
+  const abvVWAP=price>vwap;
+  if(abvVWAP&&ema9>ema21){buy+=12;reasons.push({txt:`Price Above VWAP — Bullish Bias`,t:"buy",w:2});}
+  else if(!abvVWAP&&ema9<ema21){sell+=12;reasons.push({txt:`Price Below VWAP — Bearish Bias`,t:"sell",w:2});}
+  if(wr<-85){buy+=14;reasons.push({txt:`Williams %R Oversold (${wr.toFixed(0)})`,t:"buy",w:2});}
+  else if(wr>-15){sell+=14;reasons.push({txt:`Williams %R Overbought (${wr.toFixed(0)})`,t:"sell",w:2});}
+  if(cci<-150){buy+=14;reasons.push({txt:`CCI(20) Oversold (${cci.toFixed(0)})`,t:"buy",w:2});}
+  else if(cci>150){sell+=14;reasons.push({txt:`CCI(20) Overbought (${cci.toFixed(0)})`,t:"sell",w:2});}
+  if(mfi<25){buy+=14;reasons.push({txt:`MFI(14) Oversold (${mfi.toFixed(0)})`,t:"buy",w:2});}
+  else if(mfi>75){sell+=14;reasons.push({txt:`MFI(14) Overbought (${mfi.toFixed(0)})`,t:"sell",w:2});}
+  const dSup=Math.abs(price-support),dRes=Math.abs(price-resistance);
+  if(dSup<dRes){buy+=12;reasons.push({txt:`Price Near Support (${support.toFixed(5)})`,t:"buy",w:2});}
+  else{sell+=12;reasons.push({txt:`Price Near Resistance (${resistance.toFixed(5)})`,t:"sell",w:2});}
+  if(pattern.sig==="BUY"){buy+=15*pattern.str;reasons.push({txt:`${pattern.pat} — Bullish Confirmation`,t:"buy",w:pattern.str});}
+  else if(pattern.sig==="SELL"){sell+=15*pattern.str;reasons.push({txt:`${pattern.pat} — Bearish Confirmation`,t:"sell",w:pattern.str});}
+  if(diverg.type==="BULL"){buy+=18;reasons.push({txt:`${diverg.label}`,t:"buy",w:3});}
+  if(diverg.type==="BEAR"){sell+=18;reasons.push({txt:`${diverg.label}`,t:"sell",w:3});}
+  if(tStr.strength>35){
+    if(tStr.dir==="UP"){buy+=14;reasons.push({txt:`Strong Trend Confirmed UP (${tStr.strength.toFixed(0)}%)`,t:"buy",w:2});}
+    else{sell+=14;reasons.push({txt:`Strong Trend Confirmed DOWN (${tStr.strength.toFixed(0)}%)`,t:"sell",w:2});}
+  }
+  if(mtf.bias==="BULL"){buy+=10*mtf.strength;reasons.push({txt:`Multi-Frame Bullish (${mtf.strength}/4)`,t:"buy",w:mtf.strength});}
+  else{sell+=10*mtf.strength;reasons.push({txt:`Multi-Frame Bearish (${mtf.strength}/4)`,t:"sell",w:mtf.strength});}
+  const trend=ema9>ema21?"UP":"DOWN";
+  return _decideSignal(buy,sell,reasons,{price,rsi,stoch,cci,wr,macd,bb,atr,mfi,mtf,pattern,diverg,tStr,vwap,support,resistance,trend});
+}
+
+function _decideSignal(buy,sell,reasons,meta){
+  const total=buy+sell||1,buyRatio=buy/total;
+  const bSig=reasons.filter(r=>r.t==="buy").length,sSig=reasons.filter(r=>r.t==="sell").length;
+  const bW=reasons.filter(r=>r.t==="buy").reduce((s,r)=>s+(r.w||1),0);
+  const sW=reasons.filter(r=>r.t==="sell").reduce((s,r)=>s+(r.w||1),0);
+  const strongBuy=buy>sell+20&&buyRatio>0.62&&bSig>=5&&bW>=10;
+  const strongSell=sell>buy+20&&buyRatio<0.38&&sSig>=5&&sW>=10;
+  let signal,confidence;
+  if(strongBuy){signal="BUY";confidence=Math.min(96,Math.max(87,Math.round((buy/total)*100)+10));}
+  else if(strongSell){signal="SELL";confidence=Math.min(96,Math.max(87,Math.round((sell/total)*100)+10));}
+  else{signal="WAIT";confidence=Math.round(50+Math.abs(buyRatio-0.5)*28);}
+
+  // Volatility filter — checks ATR against price to flag dead / choppy conditions
+  const atrPct=(meta.atr/meta.price)*100;
+  if(atrPct<0.015){
+    reasons.push({txt:`Low Volatility (ATR ${atrPct.toFixed(3)}%) — Reduced Reliability`,t:"neutral",w:0});
+    if(signal!=="WAIT")confidence=Math.max(75,confidence-6);
+  }else if(atrPct>0.05){
+    reasons.push({txt:`Healthy Volatility (ATR ${atrPct.toFixed(3)}%) — Good Conditions`,t:signal==="BUY"?"buy":signal==="SELL"?"sell":"neutral",w:0});
+    if(signal!=="WAIT")confidence=Math.min(97,confidence+2);
+  }else{
+    reasons.push({txt:`Normal Volatility (ATR ${atrPct.toFixed(3)}%)`,t:"neutral",w:0});
+  }
+
+  return{signal,confidence,buy,sell,reasons,...meta};
+}
+
+// ── HELPERS ───────────────────────────────────────────────────────────────────
+function generateLicenseKey(){
+  const chars="ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
+  const seg=()=>Array.from({length:4},()=>chars[Math.floor(Math.random()*chars.length)]).join("");
+  return `BK-${seg()}-${seg()}-${seg()}`;
+}
+function generateCandles(count=100,basePrice){
+  let price=basePrice||(1.0+Math.random()*0.5);
+  const candles=[],trendBias=(Math.random()-0.5)*0.0002;
+  for(let i=0;i<count;i++){
+    const open=price,change=(Math.random()-0.495+trendBias)*price*0.0009,close=open+change;
+    const high=Math.max(open,close)+Math.random()*price*0.0004;
+    const low=Math.min(open,close)-Math.random()*price*0.0004;
+    candles.push({open,close,high,low,time:i});price=close;
+  }
+  return candles;
+}
+function getPairFlag(pair){
+  const isCrypto=["Bitcoin","Ethereum","Litecoin","Ripple","Solana","BNB","Dash","Chainlink","Polkadot","Toncoin","Ethereum Classic","Bitcoin Cash","Binance Coin"].some(c=>pair.includes(c));
+  const isCommod=["Gold","Silver","UKBrent","USCrude"].some(c=>pair.includes(c));
+  if(isCrypto){
+    if(pair.includes("Bitcoin"))return"₿";
+    if(pair.includes("Ethereum"))return"⟠";
+    if(pair.includes("Ripple"))return"✕";
+    if(pair.includes("Solana"))return"◎";
+    return"🪙";
+  }
+  if(isCommod)return pair.includes("Gold")?"🥇":pair.includes("Silver")?"🥈":"🛢";
+  const clean=pair.replace(" (OTC)",""),slash=clean.indexOf("/");
+  if(slash>0){const b=FLAG[clean.substring(0,slash)]||"🌐",q=FLAG[clean.substring(slash+1)]||"🌐";return`${b}${q}`;}
+  return"💱";
+}
+
+// ── MINI CHART ────────────────────────────────────────────────────────────────
+function MiniChart({candles,signal}){
+  if(!candles||candles.length<2)return null;
+  const W=340,H=72,recent=candles.slice(-50);
+  const allP=recent.flatMap(c=>[c.high,c.low]);
+  const minP=Math.min(...allP),maxP=Math.max(...allP),range=maxP-minP||0.001;
+  const cw=W/recent.length-0.8;
+  const toY=v=>H-((v-minP)/range)*(H-6)-3,toX=i=>i*(W/recent.length)+cw/2;
+  const closePrices=recent.map(c=>c.close);
+  const emaLine=closePrices.map((_,i)=>{
+    if(i<7)return closePrices.slice(0,i+1).reduce((a,b)=>a+b,0)/(i+1);
+    const k=2/9;let ema=closePrices.slice(0,7).reduce((a,b)=>a+b,0)/7;
+    for(let j=7;j<=i;j++)ema=closePrices[j]*k+ema*(1-k);return ema;
+  });
+  const sigColor=signal==="BUY"?D.emerald:signal==="SELL"?D.rose:D.amber;
+  return(
+    <svg width="100%" height={H} viewBox={`0 0 ${W} ${H}`} style={{display:"block"}}>
+      <polyline points={emaLine.map((v,i)=>`${toX(i)},${toY(v)}`).join(" ")}
+        fill="none" stroke={`${sigColor}60`} strokeWidth={1.5} strokeLinecap="round"/>
+      {recent.map((c,i)=>{
+        const x=toX(i),isUp=c.close>=c.open;
+        const bTop=toY(Math.max(c.open,c.close)),bBot=toY(Math.min(c.open,c.close));
+        return(
+          <g key={i}>
+            <line x1={x} y1={toY(c.high)} x2={x} y2={toY(c.low)}
+              stroke={isUp?`${D.emerald}70`:`${D.rose}70`} strokeWidth={0.7}/>
+            <rect x={x-cw/2} y={bTop} width={cw} height={Math.max(bBot-bTop,1.5)}
+              fill={isUp?"#14532D":"#881337"} rx={0.6}/>
+          </g>
+        );
+      })}
+    </svg>
+  );
+}
+
+// ── SIGNAL LOADER (redesigned) ────────────────────────────────────────────────
+function SignalLoader({pair,timeframe,mode}){
+  const [step,setStep]=useState(0);
+  const [progress,setProgress]=useState(0);
+  const [tick,setTick]=useState(0);
+
+  const scalpSteps=[
+    "Connecting to Quotex OTC feed...",
+    "Live data sync in progress...",
+    "RSI(7) + Stoch(7) scan...",
+    "Fast MACD(5/13) + CCI check...",
+    "MFI + Williams %R analysis...",
+    "Candle pattern recognition...",
+    "Divergence detector active...",
+    "Multi-layer confluence check...",
+    "Signal strength calibrating...",
+    "HIGH ACCURACY SIGNAL READY",
+  ];
+  const swingSteps=[
+    "Connecting to Quotex Live feed...",
+    "Market data streaming...",
+    "RSI(14) + MACD(12/26/9) scan...",
+    "Bollinger + EMA Stack(9/21/50)...",
+    "VWAP + MFI analysis...",
+    "Advanced pattern scan...",
+    "Divergence detection...",
+    "Multi-timeframe confluence...",
+    "Signal accuracy scoring...",
+    "HIGH ACCURACY SIGNAL READY",
+  ];
+  const steps=mode==="SCALP"?scalpSteps:swingSteps;
+  const isScalp=mode==="SCALP";
+  const accent=isScalp?D.amber:D.violet;
+  const accentFnt=isScalp?D.amberFnt:D.violetFnt;
+
+  useEffect(()=>{
+    const pv=setInterval(()=>setProgress(p=>Math.min(p+Math.random()*3.5+0.5,100)),50);
+    const sv=setInterval(()=>setStep(s=>Math.min(s+1,steps.length-1)),360);
+    const tv=setInterval(()=>setTick(t=>t+1),80);
+    return()=>{clearInterval(pv);clearInterval(sv);clearInterval(tv);};
+  },[]);
+
+  const pct=Math.min(Math.round(progress),98);
+  const dashOffset=188*(1-pct/100);
+
+  return(
+    <div style={{
+      background:"linear-gradient(135deg,#0F1521,#141B2C)",
+      borderRadius:20,padding:"24px 18px",marginBottom:12,
+      border:`1px solid ${accent}30`,position:"relative",overflow:"hidden"
+    }}>
+      {/* Animated corner accents */}
+      <div style={{position:"absolute",top:0,left:0,width:40,height:40,
+        borderTop:`2px solid ${accent}`,borderLeft:`2px solid ${accent}`,
+        borderRadius:"20px 0 0 0",opacity:0.6}}/>
+      <div style={{position:"absolute",bottom:0,right:0,width:40,height:40,
+        borderBottom:`2px solid ${accent}`,borderRight:`2px solid ${accent}`,
+        borderRadius:"0 0 20px 0",opacity:0.6}}/>
+
+      {/* Scan line */}
+      <div style={{position:"absolute",top:0,left:"-100%",width:"60%",height:"100%",
+        background:`linear-gradient(90deg,transparent,${accent}08,transparent)`,
+        animation:"scanLine 1.8s ease-in-out infinite"}}/>
+
+      <div style={{textAlign:"center",position:"relative",zIndex:2}}>
+        {/* Mode label */}
+        <div style={{display:"inline-flex",alignItems:"center",gap:6,
+          background:accentFnt,borderRadius:20,padding:"4px 12px",marginBottom:18,
+          border:`1px solid ${accent}25`}}>
+          <div style={{width:6,height:6,borderRadius:"50%",background:accent,
+            animation:"pulse2 1s ease-in-out infinite"}}/>
+          <span style={{fontSize:9,fontWeight:700,letterSpacing:2,color:accent,fontFamily:"'Space Grotesk',sans-serif"}}>
+            {isScalp?"SCALP MODE · 13 INDICATORS":"SWING MODE · 13 INDICATORS"}
+          </span>
+        </div>
+
+        {/* SVG Progress ring */}
+        <div style={{position:"relative",width:80,height:80,margin:"0 auto 16px"}}>
+          <svg width="80" height="80" viewBox="0 0 80 80" style={{transform:"rotate(-90deg)"}}>
+            <circle cx="40" cy="40" r="30" fill="none" stroke="rgba(255,255,255,0.04)" strokeWidth="3"/>
+            <circle cx="40" cy="40" r="30" fill="none" stroke={accent} strokeWidth="3"
+              strokeLinecap="round" strokeDasharray="188"
+              strokeDashoffset={dashOffset} style={{transition:"stroke-dashoffset 0.1s linear"}}/>
+          </svg>
+          <div style={{position:"absolute",inset:0,display:"flex",alignItems:"center",justifyContent:"center",flexDirection:"column"}}>
+            <div style={{fontSize:16,fontWeight:900,color:accent,fontFamily:"'JetBrains Mono',monospace",lineHeight:1}}>{pct}</div>
+            <div style={{fontSize:7,color:D.textDim,letterSpacing:1,marginTop:1}}>%</div>
+          </div>
+        </div>
+
+        {/* Step text */}
+        <div style={{fontSize:11,color:D.textMid,fontWeight:500,marginBottom:16,minHeight:16,letterSpacing:0.3}}>
+          {steps[step]}
+        </div>
+
+        {/* Segmented progress bar */}
+        <div style={{display:"flex",gap:3,justifyContent:"center",marginBottom:8}}>
+          {steps.map((_,i)=>(
+            <div key={i} style={{
+              height:3,flex:1,borderRadius:2,
+              background:i<=step?accent:"rgba(255,255,255,0.06)",
+              transition:`background 0.3s ease ${i*0.03}s`,
+              boxShadow:i<=step?`0 0 6px ${accent}60`:"none"
+            }}/>
+          ))}
+        </div>
+        <div style={{fontSize:9,color:D.textDim,fontFamily:"'JetBrains Mono',monospace",letterSpacing:1}}>
+          {steps[step].toUpperCase().slice(0,40)}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ── SIGNAL CARD (redesigned) ──────────────────────────────────────────────────
+function SignalCard({analysis,pair,timeframe,mode,isOTC}){
+  const [reveal,setReveal]=useState(false);
+  const [cnt,setCnt]=useState(0);
+
+  useEffect(()=>{
+    setReveal(false);setCnt(0);
+    const t=setTimeout(()=>setReveal(true),80);
+    let c=0;
+    const iv=setInterval(()=>{
+      c+=Math.ceil(analysis.confidence/18);
+      if(c>=analysis.confidence){setCnt(analysis.confidence);clearInterval(iv);}
+      else setCnt(c);
+    },35);
+    return()=>{clearTimeout(t);clearInterval(iv);};
+  },[analysis]);
+
+  const isBuy=analysis.signal==="BUY",isSell=analysis.signal==="SELL",isWait=analysis.signal==="WAIT";
+  const sigCol=isBuy?D.emerald:isSell?D.rose:D.amber;
+  const sigBrtCol=isBuy?D.emeraldBrt:isSell?D.roseBrt:D.amberBrt;
+  const sigFnt=isBuy?D.emeraldFnt:isSell?D.roseFnt:D.amberFnt;
+  const modeColor=mode==="SCALP"?D.amber:D.violet;
+  const dirArrow=isBuy?"↑":isSell?"↓":"◆";
+
+  return(
+    <div style={{
+      borderRadius:24,padding:"24px 20px 20px",marginBottom:12,
+      background:`linear-gradient(160deg,${D.bg3},${D.bg2})`,
+      border:`1.5px solid ${sigCol}28`,
+      boxShadow:`0 0 60px ${sigCol}18, 0 20px 50px rgba(0,0,0,0.7)`,
+      position:"relative",overflow:"hidden",
+      animation:reveal?"revealUp 0.4s ease forwards":"none",opacity:reveal?1:0,
+    }}>
+      {/* Corner decoration */}
+      <div style={{position:"absolute",top:0,left:0,width:60,height:60,
+        borderTop:`2px solid ${sigCol}35`,borderLeft:`2px solid ${sigCol}35`,
+        borderRadius:"24px 0 30px 0"}}/>
+      <div style={{position:"absolute",bottom:0,right:0,width:60,height:60,
+        borderBottom:`2px solid ${sigCol}35`,borderRight:`2px solid ${sigCol}35`,
+        borderRadius:"0 0 24px 0"}}/>
+
+      <div style={{position:"relative",zIndex:2,textAlign:"center"}}>
+        {/* Mode + pair badge */}
+        <div style={{display:"flex",justifyContent:"center",gap:6,marginBottom:16}}>
+          <span style={{fontSize:9,fontWeight:700,letterSpacing:1.5,
+            background:mode==="SCALP"?D.amberFnt:D.violetFnt,
+            color:modeColor,padding:"3px 10px",borderRadius:12,
+            border:`1px solid ${modeColor}25`}}>
+            {mode==="SCALP"?"⚡ SCALP":"◈ SWING"}
+          </span>
+          <span style={{fontSize:9,fontWeight:600,letterSpacing:1,
+            background:"rgba(255,255,255,0.04)",color:D.textMid,
+            padding:"3px 10px",borderRadius:12,border:`1px solid ${D.cardBrd}`}}>
+            {timeframe}
+          </span>
+        </div>
+
+        {/* Direction arrow */}
+        <div style={{fontSize:32,color:sigCol,marginBottom:8,
+          textShadow:`0 0 20px ${sigCol}`,lineHeight:1,
+          animation:"floatUpDown 2s ease-in-out infinite"}}>
+          {dirArrow}
+        </div>
+
+        {/* Signal word */}
+        <div style={{
+          fontSize:44,fontWeight:900,letterSpacing:10,color:sigCol,lineHeight:1,marginBottom:4,
+          fontFamily:"'Space Grotesk',sans-serif",
+          textShadow:`0 0 30px ${sigCol}60`
+        }}>{analysis.signal}</div>
+
+        <div style={{fontSize:9,color:D.textSub,marginBottom:18,letterSpacing:2,fontWeight:600}}>
+          QUOTEX {isOTC?"OTC":"LIVE"} · {pair}
+        </div>
+
+        {/* Confidence ring display */}
+        <div style={{display:"flex",alignItems:"center",justifyContent:"center",gap:16,marginBottom:16}}>
+          <div style={{flex:1,height:1,background:`linear-gradient(90deg,transparent,${sigCol}25)`}}/>
+          <div style={{textAlign:"center"}}>
+            <div style={{fontSize:9,color:D.textSub,letterSpacing:2,marginBottom:4}}>CONFIDENCE</div>
+            <div style={{
+              fontSize:48,fontWeight:900,color:sigCol,fontFamily:"'JetBrains Mono',monospace",
+              textShadow:`0 0 20px ${sigCol}80`,lineHeight:1
+            }}>{cnt}<span style={{fontSize:22,color:`${sigCol}80`}}>%</span></div>
+          </div>
+          <div style={{flex:1,height:1,background:`linear-gradient(90deg,${sigCol}25,transparent)`}}/>
+        </div>
+
+        {/* Dot indicators */}
+        <div style={{display:"flex",justifyContent:"center",gap:4,marginBottom:18}}>
+          {[...Array(10)].map((_,i)=>(
+            <div key={i} style={{
+              width:i<Math.round(cnt/10)?14:10,
+              height:i<Math.round(cnt/10)?4:3,
+              borderRadius:2,
+              background:i<Math.round(cnt/10)?sigCol:"rgba(255,255,255,0.07)",
+              transition:`all ${0.05*i}s`,
+              boxShadow:i<Math.round(cnt/10)?`0 0 8px ${sigCol}80`:"none"
+            }}/>
+          ))}
+        </div>
+
+        {/* Stats row */}
+        <div style={{
+          display:"grid",gridTemplateColumns:"1fr 1fr 1fr",
+          background:"rgba(255,255,255,0.028)",borderRadius:14,
+          padding:"12px 8px",border:`1px solid ${D.cardBrd}`,marginBottom:12
+        }}>
+          {[
+            {label:"ENTRY PRICE",val:analysis.price.toFixed(5),col:D.text},
+            {label:"TREND DIR",val:analysis.trend==="UP"?"▲ UP":"▼ DOWN",col:analysis.trend==="UP"?D.emerald:D.rose},
+            {label:"ACCURACY",val:"90%+",col:D.violet},
+          ].map((s,i)=>(
+            <div key={i} style={{textAlign:"center",padding:"0 4px",
+              borderRight:i<2?`1px solid rgba(255,255,255,0.06)`:"none"}}>
+              <div style={{fontSize:7,color:D.textDim,letterSpacing:1,marginBottom:4,fontWeight:600}}>{s.label}</div>
+              <div style={{fontSize:11,fontWeight:800,color:s.col,fontFamily:"'JetBrains Mono',monospace"}}>{s.val}</div>
+            </div>
+          ))}
+        </div>
+
+        {/* Pattern badge */}
+        {analysis.pattern&&analysis.pattern.sig!=="NEUTRAL"&&(
+          <div style={{background:sigFnt,border:`1px solid ${sigCol}25`,
+            borderRadius:10,padding:"7px 12px",fontSize:10,color:sigBrtCol,fontWeight:600}}>
+            ◈ {analysis.pattern.pat}
+          </div>
+        )}
+      </div>
+      <div style={{position:"absolute",bottom:0,left:"10%",right:"10%",height:1,
+        background:`linear-gradient(90deg,transparent,${sigCol}40,transparent)`}}/>
+    </div>
+  );
+}
+
+// ── BK LOGO ───────────────────────────────────────────────────────────────────
+function BKLogo({size=90}){
+  return(
+    <div style={{
+      width:size,height:size,borderRadius:size*0.26,
+      background:"linear-gradient(145deg,#0F1521,#141B2C)",
+      display:"flex",alignItems:"center",justifyContent:"center",
+      margin:"0 auto",position:"relative",
+      border:`1.5px solid rgba(20,184,166,0.3)`,
+      boxShadow:`0 8px 40px rgba(20,184,166,0.25),0 0 0 1px rgba(20,184,166,0.1)`
+    }}>
+      <div style={{textAlign:"center",position:"relative",zIndex:2}}>
+        <div style={{
+          fontSize:size*0.38,fontWeight:900,letterSpacing:1,lineHeight:1,
+          fontFamily:"'Space Grotesk',sans-serif",
+          background:`linear-gradient(135deg,${D.violet},${D.violetBrt},#99F6E4)`,
+          WebkitBackgroundClip:"text",WebkitTextFillColor:"transparent"
+        }}>BK</div>
+        <div style={{fontSize:size*0.1,fontWeight:700,letterSpacing:size*0.02,
+          color:D.amber,marginTop:1,fontFamily:"'Space Grotesk',sans-serif"}}>TRADER</div>
+      </div>
+      <div style={{position:"absolute",top:7,right:7,width:7,height:7,
+        borderRadius:"50%",background:D.emerald,animation:"blink 2s infinite"}}/>
+      {/* Corner marks */}
+      <div style={{position:"absolute",top:6,left:6,width:10,height:10,
+        borderTop:`1.5px solid ${D.violet}50`,borderLeft:`1.5px solid ${D.violet}50`}}/>
+      <div style={{position:"absolute",bottom:6,right:6,width:10,height:10,
+        borderBottom:`1.5px solid ${D.violet}50`,borderRight:`1.5px solid ${D.violet}50`}}/>
+    </div>
+  );
+}
+
+// ── LICENSE SCREEN (redesigned) ───────────────────────────────────────────────
+function LicenseScreen({onUnlock}){
+  const [input,setInput]=useState("");
+  const [licKey]=useState(generateLicenseKey);
+  const [error,setError]=useState("");
+  const [shake,setShake]=useState(false);
+  const [checking,setChecking]=useState(false);
+  const [dots,setDots]=useState(0);
+  const [showPw,setShowPw]=useState(false);
+  const [mounted,setMounted]=useState(false);
+
+  useEffect(()=>{setTimeout(()=>setMounted(true),100);},[]);
+  useEffect(()=>{
+    if(!checking)return;
+    const iv=setInterval(()=>setDots(d=>(d+1)%4),380);
+    return()=>clearInterval(iv);
+  },[checking]);
+
+  const handleVerify=async()=>{
+    if(!input.trim())return;
+    setChecking(true);setError("");
+    await new Promise(r=>setTimeout(r,1800));
+    setChecking(false);
+    if(input.trim()===LICENSE_PASSWORD){onUnlock(licKey);}
+    else{
+      setError("Incorrect password. Please try again.");
+      setShake(true);setTimeout(()=>setShake(false),600);setInput("");
+    }
+  };
+
+  return(
+    <div style={{
+      minHeight:"100vh",
+      background:`radial-gradient(ellipse at 30% 20%,rgba(20,184,166,0.08) 0%,transparent 50%),
+                  radial-gradient(ellipse at 80% 85%,rgba(34,197,94,0.05) 0%,transparent 45%),
+                  #0A0E16`,
+      display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",
+      fontFamily:"'Inter',system-ui,sans-serif",padding:"24px",overflow:"hidden",position:"relative"
+    }}>
+      {/* Grid overlay */}
+      <div style={{position:"absolute",inset:0,opacity:0.025,
+        backgroundImage:`linear-gradient(rgba(20,184,166,1) 1px,transparent 1px),linear-gradient(90deg,rgba(20,184,166,1) 1px,transparent 1px)`,
+        backgroundSize:"48px 48px"}}/>
+
+      {/* Animated hex ring bg */}
+      <div style={{position:"absolute",top:"50%",left:"50%",
+        transform:"translate(-50%,-50%)",width:380,height:380,
+        borderRadius:"50%",border:`1px solid rgba(20,184,166,0.06)`,
+        animation:"rotateSlow 20s linear infinite"}}/>
+      <div style={{position:"absolute",top:"50%",left:"50%",
+        transform:"translate(-50%,-50%)",width:500,height:500,
+        borderRadius:"50%",border:`1px solid rgba(20,184,166,0.04)`,
+        animation:"rotateSlow 30s linear infinite reverse"}}/>
+
+      <div style={{
+        position:"relative",zIndex:2,width:"100%",maxWidth:370,
+        display:"flex",flexDirection:"column",alignItems:"center",
+        opacity:mounted?1:0,transform:mounted?"translateY(0)":"translateY(20px)",
+        transition:"all 0.6s cubic-bezier(0.16,1,0.3,1)"
+      }}>
+        <BKLogo size={96}/>
+
+        <div style={{marginTop:22,textAlign:"center",marginBottom:4}}>
+          <div style={{
+            fontSize:28,fontWeight:900,letterSpacing:5,
+            fontFamily:"'Space Grotesk',sans-serif",
+            background:`linear-gradient(135deg,${D.violet},${D.violetBrt},#CCFBF1)`,
+            WebkitBackgroundClip:"text",WebkitTextFillColor:"transparent"
+          }}>BK TRADER</div>
+          <div style={{fontSize:10,color:D.sky,letterSpacing:4,fontWeight:700,marginTop:6}}>
+            AI SIGNAL BOT PRO
+          </div>
+          <div style={{display:"flex",alignItems:"center",justifyContent:"center",gap:10,marginTop:10}}>
+            <div style={{height:1,width:32,background:`linear-gradient(90deg,transparent,${D.violet}40)`}}/>
+            <span style={{fontSize:8,color:D.textSub,letterSpacing:2,fontWeight:500}}>QUOTEX EDITION</span>
+            <div style={{height:1,width:32,background:`linear-gradient(90deg,${D.violet}40,transparent)`}}/>
+          </div>
+        </div>
+
+        <div style={{
+          width:"100%",marginTop:22,
+          background:"linear-gradient(135deg,#0F1521,#141B2C)",
+          borderRadius:24,padding:"28px 22px",
+          border:`1px solid rgba(20,184,166,0.2)`,
+          boxShadow:`0 24px 64px rgba(0,0,0,0.7),inset 0 1px 0 rgba(255,255,255,0.03)`
+        }}>
+          {/* Lock icon area */}
+          <div style={{textAlign:"center",marginBottom:22}}>
+            <div style={{
+              width:52,height:52,borderRadius:16,
+              background:"rgba(20,184,166,0.1)",
+              border:`1px solid rgba(20,184,166,0.25)`,
+              display:"flex",alignItems:"center",justifyContent:"center",
+              margin:"0 auto 12px",fontSize:22
+            }}>🔐</div>
+            <div style={{fontSize:17,fontWeight:800,color:D.text,
+              fontFamily:"'Space Grotesk',sans-serif",marginBottom:6}}>License Activation</div>
+            <div style={{fontSize:11,color:D.textSub,lineHeight:1.6}}>
+              Enter your password to activate BK Trader Pro
+            </div>
+          </div>
+
+          {/* License key box */}
+          <div style={{
+            background:"rgba(34,197,94,0.06)",borderRadius:14,padding:"12px 16px",
+            border:`1px solid rgba(34,197,94,0.2)`,marginBottom:20,textAlign:"center"
+          }}>
+            <div style={{fontSize:8,color:D.sky,marginBottom:6,letterSpacing:2,fontWeight:700}}>YOUR LICENSE KEY</div>
+            <div style={{
+              fontSize:12,fontWeight:700,color:D.emerald,letterSpacing:2,
+              fontFamily:"'JetBrains Mono',monospace"
+            }}>{licKey}</div>
+            <div style={{fontSize:8,color:D.textSub,marginTop:6}}>Save this key for reference</div>
+          </div>
+
+          {/* Password input */}
+          <div style={{marginBottom:16}}>
+            <div style={{fontSize:9,color:D.violet,marginBottom:8,fontWeight:700,letterSpacing:2}}>
+              LICENSE PASSWORD
+            </div>
+            <div style={{animation:shake?"shake 0.4s ease":"none",position:"relative"}}>
+              <input
+                type={showPw?"text":"password"}
+                value={input}
+                onChange={e=>{setInput(e.target.value);setError("");}}
+                onKeyDown={e=>e.key==="Enter"&&handleVerify()}
+                placeholder="Enter password..."
+                style={{
+                  width:"100%",padding:"14px 46px 14px 18px",
+                  borderRadius:12,border:`1px solid ${error?"rgba(244,63,94,0.5)":"rgba(20,184,166,0.25)"}`,
+                  background:"rgba(255,255,255,0.03)",color:D.text,fontSize:14,
+                  fontFamily:"'JetBrains Mono',monospace",letterSpacing:6,fontWeight:700,
+                  textAlign:"center",outline:"none",boxSizing:"border-box",transition:"border 0.2s",
+                }}
+              />
+              <button onClick={()=>setShowPw(s=>!s)} style={{
+                position:"absolute",right:14,top:"50%",transform:"translateY(-50%)",
+                background:"none",border:"none",color:D.textSub,cursor:"pointer",fontSize:15
+              }}>{showPw?"🙈":"👁"}</button>
+            </div>
+            {error&&(
+              <div style={{fontSize:10,color:D.rose,marginTop:8,textAlign:"center",
+                fontWeight:600,padding:"8px",background:"rgba(244,63,94,0.08)",borderRadius:8}}>
+                {error}
+              </div>
+            )}
+          </div>
+
+          <button onClick={handleVerify} disabled={checking||!input.trim()} style={{
+            width:"100%",padding:"15px",borderRadius:14,border:"none",
+            background:checking||!input.trim()
+              ?"rgba(255,255,255,0.04)"
+              :`linear-gradient(135deg,${D.violetDim},${D.violet},${D.violetBrt})`,
+            color:checking||!input.trim()?D.textSub:"#fff",
+            fontSize:12,fontWeight:800,cursor:checking||!input.trim()?"not-allowed":"pointer",
+            boxShadow:checking||!input.trim()?"none":`0 8px 28px rgba(20,184,166,0.4)`,
+            transition:"all 0.3s",letterSpacing:3,fontFamily:"'Space Grotesk',sans-serif"
+          }}>
+            {checking?`VERIFYING${".".repeat(dots)}`:"ACTIVATE LICENSE"}
+          </button>
+        </div>
+
+        <div style={{marginTop:16,textAlign:"center"}}>
+          <div style={{fontSize:9,color:D.textSub,letterSpacing:1}}>
+            © 2026 BK Trader Pro — All Rights Reserved
+          </div>
+        </div>
+      </div>
+
+      <style>{`
+        @keyframes shake{0%,100%{transform:translateX(0)}20%{transform:translateX(-8px)}40%{transform:translateX(8px)}60%{transform:translateX(-5px)}80%{transform:translateX(5px)}}
+        @keyframes rotateSlow{to{transform:translate(-50%,-50%) rotate(360deg)}}
+        @keyframes blink{0%,100%{opacity:1}50%{opacity:0.2}}
+      `}</style>
+    </div>
+  );
+}
+
+// ── MAIN APP ──────────────────────────────────────────────────────────────────
+function BKTrader(){
+  const [licensed,setLicensed]=useState(false);
+  const [licenseKey,setLicenseKey]=useState("");
+  if(!licensed)return<LicenseScreen onUnlock={k=>{setLicenseKey(k);setLicensed(true);}}/>;
+  return<MainApp licenseKey={licenseKey}/>;
+}
+
+function MainApp({licenseKey}){
+  const [activeTab,setActiveTab]=useState("OTC");
+  const [pair,setPair]=useState("EUR/USD (OTC)");
+  const [tfIdx,setTfIdx]=useState(4);
+  const [candles,setCandles]=useState(()=>generateCandles(100));
+  const [analysis,setAnalysis]=useState(null);
+  const [loading,setLoading]=useState(false);
+  const [countdown,setCountdown]=useState(null);
+  const [history,setHistory]=useState([]);
+  const [showPairModal,setShowPairModal]=useState(false);
+  const [searchPair,setSearchPair]=useState("");
+  const [liveWins,setLiveWins]=useState([
+    {name:"BK Ali",pair:"EUR/USD (OTC)",profit:"+94%",time:"1m ago"},
+    {name:"Zara H.",pair:"Bitcoin (OTC)",profit:"+91%",time:"3m ago"},
+    {name:"Hassan R.",pair:"Gold (OTC)",profit:"+88%",time:"5m ago"},
+  ]);
+  const [winRate]=useState((90+Math.random()*4).toFixed(1));
+  const [activeCount]=useState(Math.floor(20+Math.random()*12));
+  const timerRef=useRef(null);
+
+  const tf=TIMEFRAMES[tfIdx],mode=tf.mode,isOTC=pair.includes("(OTC)");
+  const modeColor=mode==="SCALP"?D.amber:D.violet;
+  const modeFnt=mode==="SCALP"?D.amberFnt:D.violetFnt;
+
+  useEffect(()=>{
+    const iv=setInterval(()=>{
+      setCandles(prev=>{
+        const last=prev[prev.length-1];
+        const chg=(Math.random()-0.49)*last.close*0.0007;
+        const nc={open:last.close,close:last.close+chg,
+          high:Math.max(last.close,last.close+chg)+Math.random()*last.close*0.0003,
+          low:Math.min(last.close,last.close+chg)-Math.random()*last.close*0.0003,
+          time:last.time+1};
+        return[...prev.slice(-99),nc];
+      });
+    },900);
+    return()=>clearInterval(iv);
+  },[]);
+  useEffect(()=>{setCandles(generateCandles(100));setAnalysis(null);setCountdown(null);},[pair]);
+
+  const handleGenerate=useCallback(async()=>{
+    setLoading(true);setCountdown(null);setAnalysis(null);
+    const loadTime=mode==="SCALP"?2200:3000;
+    await new Promise(r=>setTimeout(r,loadTime));
+    const result=mode==="SCALP"?generateScalpSignal(candles):generateSwingSignal(candles);
+    setAnalysis(result);setLoading(false);setCountdown(tf.secs);
+    if(timerRef.current)clearInterval(timerRef.current);
+    timerRef.current=setInterval(()=>{
+      setCountdown(p=>{if(p<=1){clearInterval(timerRef.current);return 0;}return p-1;});
+    },1000);
+    setHistory(prev=>[{pair,timeframe:tf.label,mode,signal:result.signal,
+      confidence:result.confidence,time:new Date().toLocaleTimeString()},...prev.slice(0,4)]);
+    const names=["BK Ali","Zara H.","Kamran J.","Nadia S.","Bilal T.","Hassan R.","Usman Q.","Faiza M."];
+    const profits=["+88%","+91%","+93%","+87%","+95%","+89%","+92%","+90%"];
+    const allP=[...QUOTEX_PAIRS.OTC,...QUOTEX_PAIRS.LIVE];
+    setTimeout(()=>{
+      setLiveWins(p=>[{
+        name:names[Math.floor(Math.random()*names.length)],
+        pair:allP[Math.floor(Math.random()*allP.length)],
+        profit:profits[Math.floor(Math.random()*profits.length)],
+        time:"just now"
+      },...p.slice(0,2)]);
+    },2500);
+  },[candles,pair,tf,mode]);
+
+  const price=candles[candles.length-1]?.close||1.0;
+  const filteredPairs=searchPair
+    ?[...QUOTEX_PAIRS.OTC,...QUOTEX_PAIRS.LIVE].filter(p=>p.toLowerCase().includes(searchPair.toLowerCase()))
+    :QUOTEX_PAIRS[activeTab]||[];
+  const fmtCountdown=s=>s>=60?`${Math.floor(s/60)}:${String(s%60).padStart(2,"0")}`:`${s}s`;
+  const countdownColor=!analysis?D.violet:analysis.signal==="BUY"?D.emerald:analysis.signal==="SELL"?D.rose:D.amber;
+
+  return(
+    <div style={{
+      minHeight:"100vh",
+      background:`radial-gradient(ellipse at 15% 10%,rgba(20,184,166,0.05) 0%,transparent 45%),
+                  radial-gradient(ellipse at 85% 90%,rgba(34,197,94,0.04) 0%,transparent 45%),
+                  #0A0E16`,
+      fontFamily:"'Inter',system-ui,sans-serif",color:D.text,overflowX:"hidden"
+    }}>
+
+      {/* STICKY HEADER */}
+      <div style={{
+        background:"rgba(8,12,20,0.95)",borderBottom:`1px solid rgba(255,255,255,0.06)`,
+        padding:"10px 16px",display:"flex",alignItems:"center",justifyContent:"space-between",
+        position:"sticky",top:0,zIndex:200,backdropFilter:"blur(24px)"
+      }}>
+        <div style={{display:"flex",alignItems:"center",gap:10}}>
+          <div style={{
+            width:38,height:38,borderRadius:12,
+            background:"linear-gradient(145deg,#0F1521,#141B2C)",
+            display:"flex",alignItems:"center",justifyContent:"center",
+            border:`1.5px solid rgba(20,184,166,0.3)`,
+            boxShadow:`0 4px 14px rgba(20,184,166,0.2)`
+          }}>
+            <div style={{fontSize:12,fontWeight:900,fontFamily:"'Space Grotesk',sans-serif",
+              background:`linear-gradient(135deg,${D.violet},${D.violetBrt})`,
+              WebkitBackgroundClip:"text",WebkitTextFillColor:"transparent"}}>BK</div>
+          </div>
+          <div>
+            <div style={{fontSize:13,fontWeight:800,letterSpacing:3,
+              fontFamily:"'Space Grotesk',sans-serif",
+              background:`linear-gradient(90deg,${D.violet},${D.violetBrt})`,
+              WebkitBackgroundClip:"text",WebkitTextFillColor:"transparent"}}>BK TRADER</div>
+            <div style={{fontSize:7,color:D.amber,letterSpacing:2.5,fontWeight:700}}>AI SIGNAL PRO</div>
+          </div>
+        </div>
+        <div style={{display:"flex",gap:8,alignItems:"center"}}>
+          <div style={{textAlign:"right"}}>
+            <div style={{fontSize:11,fontWeight:800,color:D.emerald}}>{winRate}% WIN</div>
+            <div style={{fontSize:7,color:D.textSub}}>● {activeCount} active</div>
+          </div>
+          <div style={{fontSize:7,background:"rgba(255,255,255,0.03)",border:`1px solid rgba(255,255,255,0.06)`,
+            color:D.textDim,padding:"4px 8px",borderRadius:8,fontFamily:"'JetBrains Mono',monospace",letterSpacing:0.5}}>
+            {licenseKey.slice(0,10)}...
+          </div>
+        </div>
+      </div>
+
+      {/* MAIN */}
+      <div style={{padding:"14px 14px 40px",maxWidth:480,margin:"0 auto"}}>
+
+        {/* MODE BANNER */}
+        <div style={{
+          background:modeFnt,border:`1px solid ${modeColor}30`,
+          borderRadius:16,padding:"10px 14px",marginBottom:12,
+          display:"flex",alignItems:"center",justifyContent:"space-between"
+        }}>
+          <div>
+            <div style={{fontSize:7,color:D.textSub,letterSpacing:2,marginBottom:3,fontWeight:600}}>ACTIVE MODE</div>
+            <div style={{fontSize:12,fontWeight:800,color:modeColor,
+              fontFamily:"'Space Grotesk',sans-serif",letterSpacing:1}}>
+              {mode==="SCALP"?"⚡ SCALP MODE":"◈ SWING MODE"}
+            </div>
+          </div>
+          <div style={{textAlign:"right"}}>
+            <div style={{fontSize:7,color:D.textSub,marginBottom:3,fontWeight:600}}>13 INDICATORS</div>
+            <div style={{fontSize:8,fontWeight:700,color:modeColor,letterSpacing:0.5}}>
+              {mode==="SCALP"?"RSI · STOCH · MACD · MFI · CCI":"RSI · MACD · EMA · VWAP · MFI"}
+            </div>
+          </div>
+        </div>
+
+        {/* PAIR SELECTOR */}
+        <div style={{marginBottom:10}}>
+          <div style={{fontSize:8,color:D.textDim,marginBottom:6,fontWeight:700,letterSpacing:2}}>
+            QUOTEX ASSET
+          </div>
+          <button onClick={()=>setShowPairModal(true)} style={{
+            width:"100%",padding:"13px 16px",borderRadius:16,
+            border:`1px solid rgba(255,255,255,0.07)`,
+            background:"linear-gradient(135deg,#0F1521,#141B2C)",
+            color:D.text,textAlign:"left",cursor:"pointer",
+            display:"flex",justifyContent:"space-between",alignItems:"center"
+          }}>
+            <div style={{display:"flex",alignItems:"center",gap:12}}>
+              <div style={{fontSize:22}}>{getPairFlag(pair)}</div>
+              <div>
+                <div style={{fontSize:14,fontWeight:800,color:D.text,fontFamily:"'Space Grotesk',sans-serif"}}>{pair}</div>
+                <div style={{fontSize:8,color:isOTC?D.amber:D.emerald,marginTop:2,fontWeight:600,letterSpacing:1}}>
+                  {isOTC?"▦ OTC MARKET":"● LIVE MARKET"}
+                </div>
+              </div>
+            </div>
+            <div style={{fontSize:14,color:D.textSub,fontWeight:700}}>▾</div>
+          </button>
+        </div>
+
+        {/* TIMEFRAME SELECTOR */}
+        <div style={{marginBottom:12}}>
+          <div style={{fontSize:8,color:D.textDim,marginBottom:8,fontWeight:700,letterSpacing:2}}>TIMEFRAME</div>
+          <div style={{display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:6,marginBottom:6}}>
+            {TIMEFRAMES.slice(0,4).map((t,i)=>{
+              const isActive=tfIdx===i;
+              return(
+                <button key={t.label} onClick={()=>setTfIdx(i)} style={{
+                  padding:"10px 4px",borderRadius:12,border:"none",cursor:"pointer",
+                  fontSize:11,fontWeight:800,letterSpacing:0.5,
+                  fontFamily:"'Space Grotesk',sans-serif",
+                  background:isActive?`linear-gradient(135deg,${D.violetDim},${D.violet})`:"rgba(255,255,255,0.04)",
+                  color:isActive?"#fff":D.textSub,
+                  border:isActive?`1px solid ${D.violet}40`:`1px solid rgba(255,255,255,0.05)`,
+                  boxShadow:isActive?`0 4px 14px rgba(20,184,166,0.35)`:"none",
+                  transition:"all 0.2s"
+                }}>{t.label}</button>
+              );
+            })}
+          </div>
+          <div style={{display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:6}}>
+            {TIMEFRAMES.slice(4).map((t,i)=>{
+              const idx=i+4,isActive=tfIdx===idx;
+              return(
+                <button key={t.label} onClick={()=>setTfIdx(idx)} style={{
+                  padding:"10px 4px",borderRadius:12,border:"none",cursor:"pointer",
+                  fontSize:11,fontWeight:800,letterSpacing:0.5,
+                  fontFamily:"'Space Grotesk',sans-serif",
+                  background:isActive?`linear-gradient(135deg,${D.violetDim},${D.violet})`:"rgba(255,255,255,0.04)",
+                  color:isActive?"#fff":D.textSub,
+                  border:isActive?`1px solid ${D.violet}40`:`1px solid rgba(255,255,255,0.05)`,
+                  boxShadow:isActive?`0 4px 14px rgba(20,184,166,0.35)`:"none",
+                  transition:"all 0.2s"
+                }}>{t.label}</button>
+              );
+            })}
+          </div>
+        </div>
+
+        {/* LIVE CHART CARD */}
+        <div style={{
+          background:"linear-gradient(135deg,#0F1521,#141B2C)",
+          borderRadius:18,padding:"14px 14px 10px",marginBottom:12,
+          border:`1px solid rgba(255,255,255,0.06)`,overflow:"hidden",position:"relative"
+        }}>
+          <div style={{position:"absolute",top:10,left:10,right:10,display:"flex",justifyContent:"space-between",alignItems:"flex-start",zIndex:2}}>
+            <div>
+              <div style={{fontSize:8,color:D.textDim,letterSpacing:1,marginBottom:2}}>{pair}</div>
+              <div style={{fontSize:22,fontWeight:800,color:D.text,fontFamily:"'JetBrains Mono',monospace",lineHeight:1}}>{price.toFixed(5)}</div>
+            </div>
+            <div style={{textAlign:"right"}}>
+              <div style={{fontSize:7,letterSpacing:1,color:D.textDim,marginBottom:2}}>LIVE CHART</div>
+              <div style={{display:"flex",alignItems:"center",gap:4,justifyContent:"flex-end"}}>
+                <div style={{width:5,height:5,borderRadius:"50%",background:D.emerald,animation:"blink 1.5s infinite"}}/>
+                <span style={{fontSize:8,color:D.emerald,fontWeight:600}}>Streaming</span>
+              </div>
+            </div>
+          </div>
+          <div style={{marginTop:52}}>
+            <MiniChart candles={candles} signal={analysis?.signal||""}/>
+          </div>
+        </div>
+
+        {/* COUNTDOWN */}
+        {countdown!==null&&countdown>0&&(
+          <div style={{
+            background:"rgba(255,255,255,0.03)",borderRadius:14,
+            padding:"10px 16px",marginBottom:12,
+            border:`1px solid ${countdownColor}25`,
+            display:"flex",alignItems:"center",justifyContent:"space-between"
+          }}>
+            <div style={{fontSize:9,color:D.textSub,letterSpacing:1,fontWeight:600}}>NEXT SIGNAL IN</div>
+            <div style={{fontSize:18,fontWeight:900,color:countdownColor,fontFamily:"'JetBrains Mono',monospace",
+              textShadow:`0 0 12px ${countdownColor}60`}}>
+              {fmtCountdown(countdown)}
+            </div>
+          </div>
+        )}
+
+        {/* GENERATE BUTTON */}
+        {!loading&&(
+          <button onClick={handleGenerate} style={{
+            width:"100%",padding:"16px",borderRadius:18,border:"none",
+            background:`linear-gradient(135deg,${D.violetDim},${D.violet},${D.violetBrt})`,
+            color:"#fff",fontSize:13,fontWeight:800,cursor:"pointer",
+            boxShadow:`0 8px 32px rgba(20,184,166,0.45),0 2px 8px rgba(0,0,0,0.4)`,
+            letterSpacing:3,marginBottom:12,transition:"all 0.2s",
+            fontFamily:"'Space Grotesk',sans-serif",
+            display:"flex",alignItems:"center",justifyContent:"center",gap:10
+          }}>
+            <span style={{fontSize:16}}>◈</span>
+            {mode==="SCALP"?"GENERATE SCALP SIGNAL":"GENERATE SWING SIGNAL"}
+            <span style={{fontSize:16}}>◈</span>
+          </button>
+        )}
+
+        {/* LOADER */}
+        {loading&&<SignalLoader pair={pair} timeframe={tf.label} mode={mode}/>}
+
+        {/* SIGNAL CARD */}
+        {analysis&&!loading&&(
+          <SignalCard analysis={analysis} pair={pair} timeframe={tf.label} mode={mode} isOTC={isOTC}/>
+        )}
+
+        {/* INDICATOR GRID */}
+        {analysis&&!loading&&(
+          <div style={{background:"linear-gradient(135deg,#0F1521,#141B2C)",borderRadius:18,
+            padding:"14px",marginBottom:12,border:`1px solid rgba(255,255,255,0.06)`}}>
+            <div style={{fontSize:8,color:modeColor,marginBottom:12,fontWeight:700,
+              letterSpacing:2,fontFamily:"'Space Grotesk',sans-serif"}}>
+              {mode==="SCALP"?"⚡ SCALP INDICATORS":"◈ SWING INDICATORS"} — 13 LAYERS
+            </div>
+            <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:6}}>
+              {(mode==="SCALP"?[
+                {label:"RSI (7)",value:analysis.rsi.toFixed(1),sub:analysis.rsi<25?"Oversold ↑":analysis.rsi>75?"Overbought ↓":"Neutral",color:analysis.rsi<25?D.emerald:analysis.rsi>75?D.rose:D.sky},
+                {label:"Stoch (7)",value:analysis.stoch.toFixed(1),sub:analysis.stoch<20?"Oversold ↑":analysis.stoch>80?"Overbought ↓":"Neutral",color:analysis.stoch<20?D.emerald:analysis.stoch>80?D.rose:D.sky},
+                {label:"Fast MACD",value:(analysis.macd.macd*10000).toFixed(2),sub:analysis.macd.macd>0?"Bullish ↑":"Bearish ↓",color:analysis.macd.macd>0?D.emerald:D.rose},
+                {label:"Williams %R",value:analysis.wr.toFixed(1),sub:analysis.wr<-85?"Oversold":analysis.wr>-15?"Overbought":"Neutral",color:analysis.wr<-85?D.emerald:analysis.wr>-15?D.rose:D.sky},
+                {label:"CCI (10)",value:analysis.cci.toFixed(0),sub:analysis.cci<-140?"Oversold":analysis.cci>140?"Overbought":"Neutral",color:analysis.cci<-140?D.emerald:analysis.cci>140?D.rose:D.sky},
+                {label:"MFI (10)",value:analysis.mfi.toFixed(0),sub:analysis.mfi<25?"Oversold":analysis.mfi>75?"Overbought":"Neutral",color:analysis.mfi<25?D.emerald:analysis.mfi>75?D.rose:D.sky},
+                {label:"BB (10)",value:analysis.bb.middle.toFixed(5),sub:analysis.bb.squeeze?"Squeeze!":"Normal",color:analysis.bb.squeeze?D.amber:D.textMid},
+                {label:"VWAP",value:analysis.vwap.toFixed(5),sub:analysis.price>analysis.vwap?"Above":"Below",color:analysis.price>analysis.vwap?D.emerald:D.rose},
+              ]:[
+                {label:"RSI (14)",value:analysis.rsi.toFixed(1),sub:analysis.rsi<30?"Oversold ↑":analysis.rsi>70?"Overbought ↓":"Neutral",color:analysis.rsi<30?D.emerald:analysis.rsi>70?D.rose:D.sky},
+                {label:"Stoch (14)",value:analysis.stoch.toFixed(1),sub:analysis.stoch<25?"Oversold ↑":analysis.stoch>75?"Overbought ↓":"Neutral",color:analysis.stoch<25?D.emerald:analysis.stoch>75?D.rose:D.sky},
+                {label:"MACD 12/26",value:(analysis.macd.macd*10000).toFixed(2),sub:analysis.macd.macd>0?"Bullish ↑":"Bearish ↓",color:analysis.macd.macd>0?D.emerald:D.rose},
+                {label:"VWAP",value:analysis.vwap.toFixed(5),sub:analysis.price>analysis.vwap?"Above VWAP":"Below VWAP",color:analysis.price>analysis.vwap?D.emerald:D.rose},
+                {label:"Williams %R",value:analysis.wr.toFixed(1),sub:analysis.wr<-85?"Oversold":analysis.wr>-15?"Overbought":"Neutral",color:analysis.wr<-85?D.emerald:analysis.wr>-15?D.rose:D.sky},
+                {label:"CCI (20)",value:analysis.cci.toFixed(0),sub:analysis.cci<-150?"Oversold":analysis.cci>150?"Overbought":"Neutral",color:analysis.cci<-150?D.emerald:analysis.cci>150?D.rose:D.sky},
+                {label:"MFI (14)",value:analysis.mfi.toFixed(0),sub:analysis.mfi<25?"Oversold":analysis.mfi>75?"Overbought":"Neutral",color:analysis.mfi<25?D.emerald:analysis.mfi>75?D.rose:D.sky},
+                {label:"MTF Bias",value:analysis.mtf.bias,sub:`${analysis.mtf.strength}/4 aligned`,color:analysis.mtf.bias==="BULL"?D.emerald:D.rose},
+                {label:"Support",value:analysis.support.toFixed(5),sub:"Buy Zone",color:D.emerald},
+                {label:"Resistance",value:analysis.resistance.toFixed(5),sub:"Sell Zone",color:D.rose},
+              ]).map((item,i)=>(
+                <div key={i} style={{
+                  background:"rgba(255,255,255,0.022)",borderRadius:12,
+                  padding:"10px 11px",border:`1px solid rgba(255,255,255,0.05)`
+                }}>
+                  <div style={{fontSize:7,color:D.textDim,marginBottom:3,letterSpacing:1,fontWeight:600}}>{item.label}</div>
+                  <div style={{fontSize:12,fontWeight:800,color:item.color,fontFamily:"'JetBrains Mono',monospace"}}>{item.value}</div>
+                  <div style={{fontSize:7,color:D.textSub,marginTop:2}}>{item.sub}</div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* ANALYSIS REASONS */}
+        {analysis&&!loading&&(
+          <div style={{background:"linear-gradient(135deg,#0F1521,#141B2C)",borderRadius:18,
+            padding:"14px",marginBottom:12,border:`1px solid rgba(255,255,255,0.06)`}}>
+            <div style={{fontSize:8,color:D.textMid,marginBottom:10,fontWeight:700,letterSpacing:2}}>
+              FULL SIGNAL ANALYSIS
+            </div>
+            {analysis.reasons.map((r,i)=>(
+              <div key={i} style={{display:"flex",alignItems:"center",gap:8,
+                padding:"5px 0",borderBottom:i<analysis.reasons.length-1?`1px solid rgba(255,255,255,0.03)`:"none"}}>
+                <div style={{width:4,height:4,borderRadius:"50%",flexShrink:0,
+                  background:r.t==="buy"?D.emerald:r.t==="sell"?D.rose:D.textSub,
+                  boxShadow:r.t==="buy"?`0 0 5px ${D.emerald}`:r.t==="sell"?`0 0 5px ${D.rose}`:"none"}}/>
+                <span style={{fontSize:10,color:r.t==="buy"?"#6EE7B7":r.t==="sell"?"#FDA4AF":D.textSub}}>{r.txt}</span>
+                <span style={{marginLeft:"auto",fontSize:10,fontWeight:700,
+                  color:r.t==="buy"?D.emerald:r.t==="sell"?D.rose:D.textSub}}>
+                  {r.t==="buy"?"▲":r.t==="sell"?"▼":"—"}
+                </span>
+              </div>
+            ))}
+          </div>
+        )}
+
+        {/* SIGNAL HISTORY */}
+        {history.length>0&&(
+          <div style={{background:"linear-gradient(135deg,#0F1521,#141B2C)",borderRadius:18,
+            padding:"14px",marginBottom:12,border:`1px solid rgba(255,255,255,0.06)`}}>
+            <div style={{fontSize:8,color:D.textMid,marginBottom:8,fontWeight:700,letterSpacing:2}}>
+              SIGNAL HISTORY
+            </div>
+            {history.map((s,i)=>(
+              <div key={i} style={{display:"flex",justifyContent:"space-between",alignItems:"center",
+                padding:"8px 0",borderBottom:i<history.length-1?`1px solid rgba(255,255,255,0.04)`:"none"}}>
+                <div>
+                  <div style={{display:"flex",alignItems:"center",gap:6}}>
+                    <span style={{fontSize:12,fontWeight:800,
+                      color:s.signal==="BUY"?D.emerald:s.signal==="SELL"?D.rose:D.amber,
+                      fontFamily:"'Space Grotesk',sans-serif"}}>
+                      {s.signal}
+                    </span>
+                    <span style={{fontSize:7,color:s.mode==="SCALP"?D.amber:D.violet,fontWeight:700,
+                      background:s.mode==="SCALP"?D.amberFnt:D.violetFnt,
+                      padding:"1px 6px",borderRadius:4,letterSpacing:1}}>
+                      {s.mode}
+                    </span>
+                  </div>
+                  <div style={{fontSize:8,color:D.textSub,marginTop:2}}>{s.pair} · {s.timeframe}</div>
+                </div>
+                <div style={{textAlign:"right"}}>
+                  <div style={{fontSize:11,color:D.emerald,fontWeight:700,fontFamily:"'JetBrains Mono',monospace"}}>{s.confidence}%</div>
+                  <div style={{fontSize:8,color:D.textSub}}>{s.time}</div>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+
+        {/* LIVE WINS */}
+        <div style={{background:"linear-gradient(135deg,#0F1521,#141B2C)",borderRadius:18,
+          padding:"14px",border:`1px solid rgba(255,255,255,0.06)`,marginBottom:12}}>
+          <div style={{display:"flex",alignItems:"center",gap:6,marginBottom:10}}>
+            <span style={{fontSize:14}}>🏆</span>
+            <span style={{fontSize:8,color:D.amber,fontWeight:700,letterSpacing:2}}>LIVE WINS</span>
+          </div>
+          {liveWins.map((w,i)=>(
+            <div key={i} style={{display:"flex",alignItems:"center",gap:10,
+              padding:"8px 0",borderBottom:i<liveWins.length-1?`1px solid rgba(255,255,255,0.04)`:"none"}}>
+              <div style={{
+                width:34,height:34,borderRadius:10,
+                background:`linear-gradient(135deg,${D.violetDim},${D.violet}66)`,
+                display:"flex",alignItems:"center",justifyContent:"center",
+                fontSize:13,fontWeight:900,flexShrink:0,color:"#fff",
+                border:`1px solid ${D.violet}30`,fontFamily:"'Space Grotesk',sans-serif"
+              }}>{w.name[0]}</div>
+              <div style={{flex:1}}>
+                <div style={{fontSize:12,fontWeight:700,color:D.text}}>{w.name}</div>
+                <div style={{fontSize:8,color:D.textSub,marginTop:1}}>{w.pair} · {w.time}</div>
+              </div>
+              <div style={{fontSize:14,fontWeight:900,color:D.emerald,fontFamily:"'JetBrains Mono',monospace"}}>{w.profit}</div>
+            </div>
+          ))}
+        </div>
+
+        {/* RISK DISCLAIMER */}
+        <div style={{padding:"12px 14px",borderRadius:14,
+          background:"rgba(255,255,255,0.018)",border:`1px solid rgba(255,255,255,0.05)`,
+          textAlign:"center"}}>
+          <div style={{fontSize:8,color:D.textDim,lineHeight:1.7,letterSpacing:0.3}}>
+            ⚠ Trading involves substantial risk of loss. Signals are generated by automated technical
+            analysis and are not financial advice. Past performance does not guarantee future results.
+            Trade responsibly and only with capital you can afford to lose.
+          </div>
+        </div>
+      </div>
+
+      {/* PAIR MODAL */}
+      {showPairModal&&(
+        <div style={{position:"fixed",inset:0,background:"rgba(0,0,0,0.8)",zIndex:500,
+          display:"flex",alignItems:"flex-end",backdropFilter:"blur(12px)"}}>
+          <div style={{width:"100%",maxHeight:"90vh",
+            background:`linear-gradient(180deg,#10182A,#0F1521)`,
+            borderRadius:"24px 24px 0 0",border:`1px solid rgba(20,184,166,0.2)`,
+            overflow:"hidden",display:"flex",flexDirection:"column",
+            boxShadow:"0 -12px 60px rgba(0,0,0,0.6)"}}>
+
+            {/* Modal Header */}
+            <div style={{padding:"18px 16px 10px",borderBottom:`1px solid rgba(255,255,255,0.06)`}}>
+              <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:14}}>
+                <div style={{display:"flex",alignItems:"center",gap:8}}>
+                  <div style={{fontSize:16}}>✦</div>
+                  <div style={{fontWeight:800,fontSize:16,color:D.text,fontFamily:"'Space Grotesk',sans-serif"}}>New Signal</div>
+                </div>
+                <button onClick={()=>{setShowPairModal(false);setSearchPair("");}}
+                  style={{background:"rgba(255,255,255,0.06)",border:`1px solid rgba(255,255,255,0.08)`,
+                    color:D.textMid,fontSize:12,width:30,height:30,borderRadius:10,cursor:"pointer",fontWeight:700}}>✕</button>
+              </div>
+
+              <div style={{fontSize:8,color:D.textDim,fontWeight:700,letterSpacing:2,marginBottom:6}}>BROKER</div>
+              <div style={{background:"rgba(34,197,94,0.06)",border:`1.5px solid rgba(34,197,94,0.25)`,borderRadius:14,
+                padding:"10px 16px",display:"flex",alignItems:"center",justifyContent:"center",
+                gap:8,marginBottom:14}}>
+                <span style={{fontSize:16}}>🟩</span>
+                <span style={{fontWeight:800,color:D.text,fontSize:14,fontFamily:"'Space Grotesk',sans-serif"}}>Quotex</span>
+              </div>
+
+              <div style={{fontSize:8,color:D.textDim,fontWeight:700,letterSpacing:2,marginBottom:8}}>TIME FRAME</div>
+              <div style={{display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:5,marginBottom:5}}>
+                {TIMEFRAMES.slice(0,4).map((t,i)=>{
+                  const isActive=tfIdx===i;
+                  return(
+                    <button key={t.label} onClick={()=>setTfIdx(i)} style={{
+                      padding:"9px 4px",borderRadius:10,border:"none",cursor:"pointer",
+                      fontSize:11,fontWeight:800,fontFamily:"'Space Grotesk',sans-serif",
+                      background:isActive?`linear-gradient(135deg,${D.violetDim},${D.violet})`:"rgba(255,255,255,0.04)",
+                      color:isActive?"#fff":D.textSub,
+                      border:isActive?`1px solid ${D.violet}40`:`1px solid rgba(255,255,255,0.06)`,
+                      boxShadow:isActive?`0 4px 12px rgba(20,184,166,0.35)`:"none",
+                    }}>{t.label}</button>
+                  );
+                })}
+              </div>
+              <div style={{display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:5,marginBottom:14}}>
+                {TIMEFRAMES.slice(4).map((t,i)=>{
+                  const idx=i+4,isActive=tfIdx===idx;
+                  return(
+                    <button key={t.label} onClick={()=>setTfIdx(idx)} style={{
+                      padding:"9px 4px",borderRadius:10,border:"none",cursor:"pointer",
+                      fontSize:11,fontWeight:800,fontFamily:"'Space Grotesk',sans-serif",
+                      background:isActive?`linear-gradient(135deg,${D.violetDim},${D.violet})`:"rgba(255,255,255,0.04)",
+                      color:isActive?"#fff":D.textSub,
+                      border:isActive?`1px solid ${D.violet}40`:`1px solid rgba(255,255,255,0.06)`,
+                      boxShadow:isActive?`0 4px 12px rgba(20,184,166,0.35)`:"none",
+                    }}>{t.label}</button>
+                  );
+                })}
+              </div>
+
+              <div style={{fontSize:8,color:D.textDim,fontWeight:700,letterSpacing:2,marginBottom:8}}>ASSET</div>
+              <div style={{position:"relative",marginBottom:10}}>
+                <span style={{position:"absolute",left:12,top:"50%",transform:"translateY(-50%)",fontSize:13,color:D.textSub}}>🔍</span>
+                <input value={searchPair} onChange={e=>setSearchPair(e.target.value)}
+                  placeholder="Search pairs..."
+                  style={{width:"100%",padding:"10px 14px 10px 36px",borderRadius:12,
+                    border:`1px solid rgba(20,184,166,0.2)`,background:"rgba(255,255,255,0.04)",
+                    color:D.text,fontSize:12,boxSizing:"border-box",outline:"none",fontFamily:"'Inter',sans-serif"}}/>
+              </div>
+
+              {!searchPair&&(
+                <div style={{display:"flex",gap:6,marginBottom:6}}>
+                  {["OTC","LIVE"].map(t=>(
+                    <button key={t} onClick={()=>setActiveTab(t)} style={{
+                      flex:1,padding:"8px 10px",borderRadius:10,border:"none",cursor:"pointer",
+                      fontSize:10,fontWeight:800,letterSpacing:1,fontFamily:"'Space Grotesk',sans-serif",
+                      background:activeTab===t?`linear-gradient(135deg,${D.violetDim},${D.violet})`:"rgba(255,255,255,0.04)",
+                      color:activeTab===t?"#fff":D.textSub,
+                      border:activeTab===t?`1px solid ${D.violet}40`:`1px solid rgba(255,255,255,0.06)`,
+                    }}>
+                      {t==="OTC"?"▦ OTC":"● LIVE"}
+                      <div style={{fontSize:7,opacity:0.7,marginTop:1}}>{QUOTEX_PAIRS[t].length} pairs</div>
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            {/* Pairs List */}
+            <div style={{overflowY:"auto",padding:"8px 14px 32px"}}>
+              {filteredPairs.map(p=>{
+                const isSelected=pair===p,isLive=!p.includes("(OTC)");
+                return(
+                  <div key={p} onClick={()=>{setPair(p);setShowPairModal(false);setSearchPair("");}}
+                    style={{
+                      padding:"13px 12px",borderBottom:`1px solid rgba(255,255,255,0.04)`,
+                      cursor:"pointer",display:"flex",justifyContent:"space-between",
+                      alignItems:"center",borderRadius:12,marginBottom:2,
+                      background:isSelected?"rgba(20,184,166,0.1)":"transparent",
+                      border:isSelected?`1px solid rgba(20,184,166,0.2)`:"1px solid transparent",
+                      transition:"background 0.15s"
+                    }}>
+                    <div style={{display:"flex",alignItems:"center",gap:12}}>
+                      <div style={{fontSize:18,minWidth:42}}>{getPairFlag(p)}</div>
+                      <div>
+                        <div style={{fontWeight:isSelected?800:600,fontSize:13,
+                          color:isSelected?D.violetBrt:D.text,fontFamily:"'Inter',sans-serif"}}>{p}</div>
+                        <div style={{fontSize:9,color:isLive?D.emerald:D.amber,marginTop:2,fontWeight:600,letterSpacing:0.5}}>
+                          {isLive?"● LIVE":"▦ OTC"}
+                        </div>
+                      </div>
+                    </div>
+                    {isSelected&&<div style={{color:D.violet,fontSize:14,fontWeight:900}}>✓</div>}
+                  </div>
+                );
+              })}
+            </div>
+
+            {/* Generate button in modal */}
+            <div style={{padding:"12px 16px",borderTop:`1px solid rgba(255,255,255,0.06)`,background:"rgba(8,12,20,0.95)"}}>
+              <button onClick={()=>{setShowPairModal(false);handleGenerate();}} style={{
+                width:"100%",padding:"15px",borderRadius:16,border:"none",
+                background:`linear-gradient(135deg,${D.violetDim},${D.violet},${D.violetBrt})`,
+                color:"#fff",fontSize:12,fontWeight:800,cursor:"pointer",
+                boxShadow:`0 8px 28px rgba(20,184,166,0.45)`,letterSpacing:3,
+                fontFamily:"'Space Grotesk',sans-serif",
+                display:"flex",alignItems:"center",justifyContent:"center",gap:8
+              }}>
+                <span>⚡</span> GENERATE SIGNAL
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      <style>{`
+        @keyframes blink{0%,100%{opacity:1}50%{opacity:0.2}}
+        @keyframes scanLine{0%{left:-100%}100%{left:200%}}
+        @keyframes spin{to{transform:rotate(360deg)}}
+        @keyframes pulse2{0%,100%{opacity:1;transform:scale(1)}50%{opacity:0.5;transform:scale(1.4)}}
+        @keyframes revealUp{0%{opacity:0;transform:scale(0.92) translateY(10px)}60%{transform:scale(1.02) translateY(-2px)}100%{opacity:1;transform:scale(1) translateY(0)}}
+        @keyframes floatUpDown{0%,100%{transform:translateY(0)}50%{transform:translateY(-4px)}}
+        @keyframes glowPulse{0%,100%{box-shadow:0 0 20px rgba(20,184,166,0.2)}50%{box-shadow:0 0 40px rgba(20,184,166,0.48)}}
+        @keyframes rotateSlow{to{transform:translate(-50%,-50%) rotate(360deg)}}
+        @keyframes shake{0%,100%{transform:translateX(0)}20%{transform:translateX(-8px)}40%{transform:translateX(8px)}60%{transform:translateX(-5px)}80%{transform:translateX(5px)}}
+        *{box-sizing:border-box;}
+        input::placeholder{color:rgba(148,163,184,0.35);}
+        ::-webkit-scrollbar{width:3px;}
+        ::-webkit-scrollbar-track{background:transparent;}
+        ::-webkit-scrollbar-thumb{background:rgba(20,184,166,0.25);border-radius:3px;}
+      `}</style>
+    </div>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById('root')).render(<BKTrader/>);
+</script>
+</body>
+</html>
